@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/b4b4r07/pipe"
+	"github.com/b4b4r07/go-pipe"
 )
 
 func main() {
