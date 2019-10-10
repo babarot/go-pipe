@@ -3,28 +3,25 @@ package pipe
 import (
 	"bytes"
 	"io"
-	"log"
 	"os/exec"
 )
 
-func Command(output_buffer *bytes.Buffer, stack ...*exec.Cmd) (err error) {
-	var error_buffer bytes.Buffer
-	pipe_stack := make([]*io.PipeWriter, len(stack)-1)
+// Command is a os/exec.Commnad wrapper for UNIX pipe
+func Command(stdout *bytes.Buffer, stack ...*exec.Cmd) (err error) {
+	var stderr bytes.Buffer
+	pipeStack := make([]*io.PipeWriter, len(stack)-1)
 	i := 0
 	for ; i < len(stack)-1; i++ {
-		stdin_pipe, stdout_pipe := io.Pipe()
-		stack[i].Stdout = stdout_pipe
-		stack[i].Stderr = &error_buffer
-		stack[i+1].Stdin = stdin_pipe
-		pipe_stack[i] = stdout_pipe
+		inPipe, outPipe := io.Pipe()
+		stack[i].Stdout = outPipe
+		stack[i].Stderr = &stderr
+		stack[i+1].Stdin = inPipe
+		pipeStack[i] = outPipe
 	}
-	stack[i].Stdout = output_buffer
-	stack[i].Stderr = &error_buffer
+	stack[i].Stdout = stdout
+	stack[i].Stderr = &stderr
 
-	if err := call(stack, pipe_stack); err != nil {
-		log.Fatalln(string(error_buffer.Bytes()), err)
-	}
-	return err
+	return call(stack, pipeStack)
 }
 
 func call(stack []*exec.Cmd, pipes []*io.PipeWriter) (err error) {
